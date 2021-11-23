@@ -12,6 +12,8 @@ NOTE_DIR="$HOME/notes"
 NOTE_NAME="$YEAR-$MONTH-$DAY.md"
 PRINT_TOOL="cat"
 organize_by_date=true
+use_git=true
+GIT_TOOL="git"
 
 # Overwrite default configs from noterc configuration file
 NOTERC="${XDG_CONFIG_HOME:-$HOME/.config}/notekeeper/noterc"
@@ -24,8 +26,21 @@ else
     NOTE_PATH=$NOTE_DIR
 fi
 
+initialize_git() {
+    if [ ! -d "$BASE_NOTE_DIR/.git" ]; then
+        if [ whereis git2 &>/dev/null -ne 0 ]; then
+            printf "git executable not found please install"
+        else
+            git init $BASE_NOTE_DIR
+        fi
+    fi
+}
+
 
 create_note() {
+    if [ "$use_git" = true ]; then
+        initialize_git
+    fi
     if [ ! -f "$NOTE_PATH/$NOTE_NAME" ]; then
         mkdir -p "$NOTE_PATH"
         touch "$NOTE_PATH/$NOTE_NAME"
