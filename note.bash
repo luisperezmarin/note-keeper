@@ -36,7 +36,7 @@ sync_notes() {
             exit 1
         fi
         timestamp=$(date +%s)
-        cd "${BASE_NOTE_DIR}"
+        cd "${BASE_NOTE_DIR}" || exit 1
         if [ ! -d "${BASE_NOTE_DIR}/.git" ]; then
             printf "Initializing git repository\n"
             git init
