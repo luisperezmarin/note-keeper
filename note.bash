@@ -12,8 +12,7 @@ NOTE_DIR="$HOME/notes"
 NOTE_NAME="$YEAR-$MONTH-$DAY.md"
 PRINT_TOOL="cat"
 organize_by_date=true
-use_git=true
-GIT_TOOL="git"
+GIT_URL=""
 
 # Overwrite default configs from noterc configuration file
 NOTERC="${XDG_CONFIG_HOME:-$HOME/.config}/notekeeper/noterc"
@@ -26,21 +25,35 @@ else
     NOTE_PATH=$NOTE_DIR
 fi
 
-initialize_git() {
-    if [ ! -d "$BASE_NOTE_DIR/.git" ]; then
-        if [ whereis git2 &>/dev/null -ne 0 ]; then
-            printf "git executable not found please install"
+sync_notes() {
+    if [ "${GIT_URL}" == "" ]; then
+        printf "No git url set, if you want use git to synchronize your notes\n"
+        printf "Please set the GIT_URL variable in your noterc file\n"
+        exit 1
+    elif [ "${GIT_URL}" != "" ]; then
+        if [ "$(command -v git &>/dev/null)" -ne 0 ]; then
+            printf "git executable not found please install it\n"
+            exit 1
+        fi
+        timestamp=$(date +%s)
+        cd "${BASE_NOTE_DIR}"
+        if [ ! -d "${BASE_NOTE_DIR}/.git" ]; then
+            printf "Initializing git repository\n"
+            git init
+            git add .
+            git commit -m "Sync notes at ${timestamp}"
+            git remote add origin "${GIT_URL}"
+            git push -u origin master
         else
-            git init $BASE_NOTE_DIR
+            printf "Updating git repository\n"
+            git add .
+            git commit -m "Sync notes at ${timestamp}"
+            git push
         fi
     fi
 }
 
-
 create_note() {
-    if [ "$use_git" = true ]; then
-        initialize_git
-    fi
     if [ ! -f "$NOTE_PATH/$NOTE_NAME" ]; then
         mkdir -p "$NOTE_PATH"
         touch "$NOTE_PATH/$NOTE_NAME"
@@ -67,6 +80,7 @@ Arguments:
        --destroy <FILENAME>           Permanently delete (rm) a note.
   -l | --list   [<File Extension>]    List note files. Defaults to .md files
                                       if no file extension is specified.
+  -s | --sync                         Use git to sync notes.
 
 Notekeeper loads configuration variables from:
 \$HOME/.config/notekeeper/noterc.
@@ -229,6 +243,10 @@ if (($# > 0)); then
                 file_extension=".md"
             fi
             list_notes $file_extension
+            exit 0
+            ;;
+        -s | --sync)
+            sync_notes
             exit 0
             ;;
         *)
